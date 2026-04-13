@@ -542,18 +542,22 @@ Found 3199 images belonging to 16 classes.
 
 That is **~16,000** training images (**1,000** × **16**, minus one missing or skipped file) and **~3,200** images in the second directory (**200** × **16**, minus one)—still **16** classes. Small gaps vs nominal counts usually mean a failed save, unreadable PNG, or name collision if **train** and **test** outputs ever shared the same folder.
 
-**Fit (this configuration):** train with **~16,000** images and use the **test** iterator as **validation** for **`val_accuracy`** and **early stopping** (~**3,200** images):
+**Fit (this configuration):** train with **~16,000** images and use the **test** iterator as **validation** for **`val_accuracy`** and **early stopping** (~**3,200** images). Up to **40** epochs; **`EarlyStopping`** usually ends the run earlier if **`val_accuracy`** stalls.
+
+### Now fit the model
 
 ```python
-history = nn.fit(
+simple_overfitting_model = nn.fit(
     train_it,
+    epochs=40,
     validation_data=test_it,
-    epochs=100,  # upper cap; EarlyStopping will cut this short
     callbacks=callbacks_list,
 )
 ```
 
-Tune **`steps_per_epoch`** / **`validation_steps`** if you fix **`batch_size`** and want exact epoch coverage; with default batching, Keras infers steps from the iterators.
+The return value is a **`History`** object (here stored as **`simple_overfitting_model`**) with **`history['accuracy']`**, **`history['val_accuracy']`**, losses, etc., for plotting and tables.
+
+Tune **`steps_per_epoch`** / **`validation_steps`** if you set **`batch_size`** explicitly and need deterministic epoch length; otherwise Keras derives steps from the iterators.
 
 **Optional / aspirational:** shallow learners (**SVM**, **AdaBoost**) on **frozen** features were discussed earlier in the proposal; they are **out of scope** for this core **3 × 5** grid unless time allows.
 
