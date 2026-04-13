@@ -124,6 +124,10 @@ rvl-cdip/
 
 In this step the notebook **inspects** the release to understand the **images** and **labels** before preprocessing. The official split sizes are **320,000** training, **40,000** validation, and **40,000** test images (as in **Download dataset**). Images are **grayscale** scans whose **largest dimension does not exceed 1000** pixels (exact width/height varies by page).
 
+Representative **one-image-per-category** thumbnails illustrate how layout, typography, and structure differ across classes (grid order is for display only; canonical **0–15** IDs are in the **Dataset** table):
+
+![RVL-CDIP: example document image for each of the 16 categories](docs/rvl-cdip-class-overview.png)
+
 **Label files** under `labels/` (`train.txt`, `val.txt`, `test.txt`) list one sample per line:
 
 ```text
