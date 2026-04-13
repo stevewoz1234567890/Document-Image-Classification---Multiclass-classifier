@@ -321,11 +321,12 @@ height = 768
 generate_dataset(width, height, target_path, source_path, desired_size_per_category)
 ```
 
-**Test / eval sample (200 per category → 3,200 total), same spatial size:**
+**Test / eval sample (200 per category → 3,200 total), same spatial size:** here **`target_path`** matches the **train** export so both splits land under **`sample_1000/rvl-cdip/<class>/`**. That is safe when **train** and **test** basenames do not collide (usual for RVL-CDIP); if they ever overlap, point **`test`** at a sibling folder (e.g. **`.../sample_1000/rvl-cdip_test/`**) or nest **`train/`** vs **`test/`** in the target.
 
 ```python
+# Generate test dataset for 1000×768 with 200 images for each category
 source_path = "/Volumes/T7/rvl-cdip/test"
-target_path = "/Volumes/T7/sample_1000_test/rvl-cdip/"  # layout mirrors train export
+target_path = "/Volumes/T7/sample_1000/rvl-cdip/"
 desired_size_per_category = 200
 width = 1000
 height = 768
@@ -355,11 +356,11 @@ python scripts/generate_resampled_dataset.py \
 ```
 
 ```bash
-# Test tree: 200 per class → 3,200 PNGs
+# Test tree: 200 per class → 3,200 PNGs (same target root as train snippet above)
 python scripts/generate_resampled_dataset.py \
   --width 1000 --height 768 \
   --source /Volumes/T7/rvl-cdip/test \
-  --target /Volumes/T7/sample_1000_test/rvl-cdip \
+  --target /Volumes/T7/sample_1000/rvl-cdip \
   --per-class 200 \
   --seed 42
 ```
