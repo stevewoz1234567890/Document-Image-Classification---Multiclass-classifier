@@ -29,6 +29,41 @@ flowchart LR
   E --> F((End))
 ```
 
+## Structure of the notebook
+
+The main **Colab / Jupyter** notebook follows a linear workflow, with explicit branches for **how much training data** is used and parallel options for **which architecture** is trained.
+
+```mermaid
+flowchart TD
+  S((Start)) --> DL[Download dataset]
+  DL --> DE[Data exploration]
+  DE --> PP[Preprocessing]
+  PP --> DS{Dataset size}
+  DS -->|1,600 images| MD[Modeling]
+  DS -->|8,000| MD
+  DS -->|16,000| MD
+  DS -->|32,000| MD
+  DS -->|160,000| MD
+  MD --> CO[Collect observations]
+  CO --> CR[Conclusion / recommendation]
+```
+
+**Preprocessing** (detail for the notebook stage above):
+
+- **Reorganize images** — place files in a consistent folder layout (e.g., by class or split).
+- **Resize images** — standardize resolution for the model (see the **Preprocessing** section).
+- **Reformat** — convert inputs such as **.tif** to **.png** when required for the training stack.
+
+**Dataset size:** the diamond is an experimental design point—the same modeling block is re-run for training subsets on the order of **1,600**, **8,000**, **16,000**, **32,000**, and **160,000** images to study scaling behavior before committing to the largest runs.
+
+**Modeling** explores:
+
+- A **CNN** trained from scratch (or with a lightweight custom architecture).
+- **EfficientNetB0** via **transfer learning**.
+- **ResNet50** via **transfer learning**.
+
+**Collect observations** logs metrics, confusion views, and timing; **Conclusion / recommendation** summarizes which setup fits the problem best.
+
 ## Dataset
 
 The **RVL-CDIP** (Ryerson Vision Lab Complex Document Information Processing) dataset consists of 400,000 grayscale images in 16 classes, with 25,000 images per class. There are 320,000 training images, 40,000 validation images, and 40,000 test images. The images are sized so their largest dimension does not exceed 1000 pixels.
