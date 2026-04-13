@@ -58,7 +58,9 @@ flowchart TD
 
 **Dataset size (iterative):** experiments sweep how many **training** images are sampled **per category**—**100**, **500**, **1,000**, **2,000**, and **10,000**. With **16** classes, that is **1,600**, **8,000**, **16,000**, **32,000**, and **160,000** **training** images in total, matching the branches in the diagram. The same **generate_dataset**-style pipeline builds each regime; to avoid repeating long sections, the **notebook** walks through **only three** of these sizes as **demonstrations** (the procedure is identical for the rest).
 
-**Example — “Dataset 16,000”:** **1,000** images **per category** for **training** and **200** images **per category** for **validation** (validation is **20%** of the per-class training count, on disjoint files). The run name follows total **training** images: 16 × 1,000 = **16,000**. In this configuration, exported images are **1000 × 768** pixels (other experiments in this repo may use different target sizes, e.g. **512 × 512**, as in **Preprocessing**).
+**Example — “Dataset 16,000”:** **1,000** images **per category** for **training** and **200** **per category** for a **held-out evaluation** split sampled from the reorganized **`test`** tree (**3,200** images total = 200 × 16). (If you instead reserve **200** **per category** strictly for **validation** during training, use the same sampling pattern on a `validation/` tree or a carved subset.) The run name follows total **training** images: 16 × 1,000 = **16,000**. Exported tiles for this run are **1000 × 768** pixels (other experiments may use **512 × 512**, as in **Preprocessing**).
+
+**Observed pool sizes (example machine):** under **`/Volumes/T7/rvl-cdip/train/<class>/`**, each class folder holds on the order of **~19.8k–20.1k** TIFFs (consistent with **~20k** train images per class in RVL-CDIP). `generate_dataset` logs one line per directory, e.g. `Directory .../train/15 has 19975 files, we have to choose 1000 files (randomly).` — then it writes **1,000** random **PNG**s per class. The **test** pass uses **`desired_size_per_category = 200`** from **`.../rvl-cdip/test/`** to produce **3,200** evaluation images.
 
 **Models** (three runs per data configuration):
 
@@ -319,6 +321,17 @@ height = 768
 generate_dataset(width, height, target_path, source_path, desired_size_per_category)
 ```
 
+**Test / eval sample (200 per category → 3,200 total), same spatial size:**
+
+```python
+source_path = "/Volumes/T7/rvl-cdip/test"
+target_path = "/Volumes/T7/sample_1000_test/rvl-cdip/"  # layout mirrors train export
+desired_size_per_category = 200
+width = 1000
+height = 768
+generate_dataset(width, height, target_path, source_path, desired_size_per_category)
+```
+
 CLI equivalent (same logic, portable paths): [`scripts/generate_resampled_dataset.py`](scripts/generate_resampled_dataset.py)
 
 ```bash
@@ -338,6 +351,16 @@ python scripts/generate_resampled_dataset.py \
   --source /Volumes/T7/rvl-cdip/train \
   --target /Volumes/T7/sample_1000/rvl-cdip \
   --per-class 1000 \
+  --seed 42
+```
+
+```bash
+# Test tree: 200 per class → 3,200 PNGs
+python scripts/generate_resampled_dataset.py \
+  --width 1000 --height 768 \
+  --source /Volumes/T7/rvl-cdip/test \
+  --target /Volumes/T7/sample_1000_test/rvl-cdip \
+  --per-class 200 \
   --seed 42
 ```
 
