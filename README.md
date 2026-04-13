@@ -342,9 +342,19 @@ Deliverables for this stage include **training-set** summaries of **accuracy**, 
 
 ## Infrastructure details
 
-Development and training will run in **Google Colaboratory** (Colab), with **Google Drive** used for persistent storage (mounting Drive in notebooks to read the dataset and save checkpoints).
+Development and training use **Google Colaboratory** with a **Colab Pro+** subscription for this project. **Pro+** improves **GPU** priority, **compute-unit** allowances, **session** length, and (where enabled) **background** execution compared with free or **Pro** tiers—see [Google Colab plans](https://colab.research.google.com/signup) for current terms.
 
-The plan is to start with **Colab Pro** for better GPU access during exploratory training; **Colab Pro+** is an option if longer runs or more sustained GPU availability is needed. On the storage side, a **Google Drive** subscription at the **100 GB** tier fits **staged** copies (compressed archive, sampled subsets, checkpoints); keeping the **full ~100 GB** extract plus the **~37 GB** archive on Drive at once may require **more capacity** or external disk.
+**GPU and memory (indicative):** After **Runtime → Change runtime type → GPU**, Colab attaches whatever **NVIDIA** accelerator is available in the pool. **Pro+** users are more likely to receive **premium** SKUs (commonly **T4**, **L4**, or **A100**-class hardware, **subject to availability**). **VRAM** depends on the exact GPU; **host RAM** depends on whether you pick a **standard** or **high-RAM** runtime.
+
+| Resource | Typical ballpark (varies by assignment) |
+|----------|----------------------------------------|
+| **GPU families** | **T4**, **L4**, **A100** (not guaranteed; pool-dependent) |
+| **GPU memory** | ~**16 GB** (T4), ~**24 GB** (L4), ~**40 / 80 GB** (A100-class) |
+| **Notebook RAM** | **Standard** vs **high-RAM**; use **high-RAM** when loading large subsets or big models |
+
+Always confirm **GPU name**, **VRAM**, and **RAM** in the runtime panel after the session starts; Google can change backends without notice.
+
+**Google Drive:** **200 GB** **Google One** / Drive subscription for the **compressed** archive, **uncompressed** or **resampled** data, and **checkpoints**. That budget fits the **~37 GB** tarball plus a **~100 GB** full extract with room for **PNGs** and models, or you can keep only **subsets** on Drive to preserve headroom.
 
 ## Conclusion
 
