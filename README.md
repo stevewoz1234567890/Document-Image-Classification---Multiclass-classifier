@@ -62,7 +62,7 @@ flowchart TD
 
 **Observed pool sizes (example machine):** under **`/Volumes/T7/rvl-cdip/train/<class>/`**, each class folder holds on the order of **~19.8k–20.1k** TIFFs (consistent with **~20k** train images per class in RVL-CDIP). `generate_dataset` logs one line per directory, e.g. `Directory .../train/15 has 19975 files, we have to choose 1000 files (randomly).` — then it writes **1,000** random **PNG**s per class. Under **`.../rvl-cdip/test/<class>/`**, pools are **~2.4k–2.6k** TIFFs per class (about **2,500** on average, matching **40k** test ÷ **16**), with log lines such as `Directory .../test/3 has 2532 files, we have to choose 200 files (randomly).` That pass writes **200** random **PNG**s per class (**3,200** total).
 
-**Models** (three per dataset size — see **Modeling**): **CNN** (conv + **ReLU** + **softmax**), **EfficientNetB0**, **ResNet50**. **Early stopping** on **validation accuracy**, **patience = 4** epochs.
+**Models** (three per dataset size — see **Modeling**): **CNN** (conv, **LeakyReLU**, **MaxPool**, **BatchNorm**, **Dropout**, **softmax**), **EfficientNetB0**, **ResNet50**. **Early stopping** on **validation accuracy**, **patience = 4** epochs.
 
 Each model is trained on the same **train / validation / test** layout for that subset. After every run, the notebook records **training accuracy**, **validation accuracy**, **training loss**, **validation loss**, **execution time**, **number of epochs**, and related settings. **Collect observations** aggregates these runs; the final **conclusion** compares models and recommends a preferred setup from the metrics.
 
@@ -383,9 +383,24 @@ Training compares **three** model families on the **same** sampled datasets, acr
 
 **Architectures**
 
-1. **Convolutional neural network (CNN)** — a **basic** stack: a small number of **convolutional** layers, **ReLU** activations, and a **softmax** output over **16** classes (from-scratch baseline).
+1. **Convolutional neural network (CNN)** — custom **from-scratch** document classifier (details below).
 2. **EfficientNetB0** — **transfer learning** (ImageNet-pretrained backbone, task-specific head).
 3. **ResNet50** — **transfer learning** (same pattern).
+
+### Convolutional neural network (CNN)
+
+This **CNN** is built to **classify document images** into the **16** RVL-CDIP categories for each sampled dataset. The figure matches the notebook implementation (layer colors: **Conv2D**, **LeakyReLU**, **MaxPool**, **BatchNorm**, **Dropout**, **Dense**, **Softmax**).
+
+![CNN architecture for 16-way document image classification](docs/cnn-architecture.png)
+
+**Block summary (tensor shapes follow the diagram; set Keras `input_shape` to your preprocessed size, e.g. 1000×768×1 or 1024×768×C as used in the figure):**
+
+1. **Conv2D** (32 filters) + **LeakyReLU** — feature map **32 × 1024 × 768** (spatial size as drawn for that run).
+2. **MaxPool2D** → **BatchNormalization** → **Conv2D** (32) — **32 × 511 × 383**.
+3. **MaxPool2D** → **Conv2D** (16) — **16 × 254 × 190**.
+4. **MaxPool2D** → **Conv2D** (8) → **Dropout** — **8 × 126 × 94**.
+5. **Flatten** (size **8 × 126 × 94 = 94,752**).
+6. **Dense** head with **LeakyReLU** and **Dropout**, then **Dense(4096)** → **Dense(2046)** → **Dense(16)** + **Softmax** for **16** classes.
 
 **Procedure:** For each dataset size below, **train (or fine-tune)** all **three** models on that split’s **training** data, monitor **validation**, then record **test** metrics when applicable. For scales **2–5**, the **same architectural definitions** and training recipe as in step **1** are reused—weights are **fit again** on the larger sample (not merely evaluating the step-1 checkpoint on new pixels unless you explicitly choose warm-start).
 
