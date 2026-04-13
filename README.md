@@ -41,16 +41,15 @@ Dataset size is **37 GB** (compressed), available as `rvl-cdip.tar.gz`. The cate
 | 14 | resume |
 | 15 | memo |
 
-The compressed archive follows a directory layout in which a **labels** directory holds files for training, validation, and test splits. Each line lists an image identifier (or path) and its category as **space-separated** values.
+After extracting `rvl-cdip.tar.gz`, the top-level folder **`rvl-cdip`** contains dataset notes, label files for each split, and all images. The **`labels`** directory holds `train.txt`, `val.txt`, and `test.txt`; each line is an image name (or path) and a category ID, **space-separated**. Image files live under **`images/`** (paths match the label files).
 
 ```text
 rvl-cdip/
+├── readme.txt
 ├── labels/
-│   ├── train.txt      # image_name <space> category_id (per line)
+│   ├── train.txt
 │   ├── val.txt
 │   └── test.txt
-└── images/            # image files referenced by the label files
-    └── ...
+└── images/
+    └── ...            # grayscale document images
 ```
-
-*(Adjust the tree above if your tarball uses different folder names; the label files are the authoritative split and class assignments.)*
