@@ -31,7 +31,9 @@ flowchart LR
 
 ## Structure of the notebook
 
-The main **Colab / Jupyter** notebook follows a linear workflow, with explicit branches for **how much training data** is used and parallel options for **which architecture** is trained.
+As in the workflow figure, the project starts from a **publicly available** dataset. The notebook **explores** the corpus, then applies **preprocessing** before any model design. Because of **compute and memory** limits, experiments use **smaller, sampled subsets** to build and validate models before scaling up.
+
+The main **Colab / Jupyter** path is linear, with branches for **how much training data** is used and **which architecture** is trained.
 
 ```mermaid
 flowchart TD
@@ -48,21 +50,29 @@ flowchart TD
   CO --> CR[Conclusion / recommendation]
 ```
 
-**Preprocessing** (detail for the notebook stage above):
+**Preprocessing** (detail for the stage above):
 
 - **Reorganize images** — place files in a consistent folder layout (e.g., by class or split).
 - **Resize images** — standardize resolution for the model (see the **Preprocessing** section).
 - **Reformat** — convert inputs such as **.tif** to **.png** when required for the training stack.
 
-**Dataset size:** the diamond is an experimental design point—the same modeling block is re-run for training subsets on the order of **1,600**, **8,000**, **16,000**, **32,000**, and **160,000** images to study scaling behavior before committing to the largest runs.
+**Dataset size:** the diamond re-runs **modeling** for training subsets on the order of **1,600**, **8,000**, **16,000**, **32,000**, and **160,000** **training** images (see split note below).
 
-**Modeling** explores:
+**Models** (three runs per data configuration):
 
-- A **CNN** trained from scratch (or with a lightweight custom architecture).
-- **EfficientNetB0** via **transfer learning**.
-- **ResNet50** via **transfer learning**.
+1. **Convolutional neural network (CNN)** — custom or from-scratch baseline.
+2. **Transfer learning** with **EfficientNetB0**.
+3. **Transfer learning** with **ResNet50**.
 
-**Collect observations** logs metrics, confusion views, and timing; **Conclusion / recommendation** summarizes which setup fits the problem best.
+Each model is trained and evaluated on the same **train / validation / test** layout for that subset. After every run, the notebook records **training accuracy**, **validation accuracy**, **training loss**, **validation loss**, **execution time**, **number of epochs**, and related settings. **Collect observations** aggregates these runs; the final **conclusion** compares models and recommends a preferred setup from the metrics.
+
+**Train / validation / test (per experimental dataset):**
+
+- Splits use an **80% / 20%** ratio between **(training + validation)** combined and **held-out test**—i.e. **20%** of the images in that experimental bundle are reserved for **test**.
+- Configurations are **named by the training-set size** **T** (the count of images used for weight updates).
+- **Validation** uses **20% of T** additional images (**not** overlapping the **T** training images), drawn from the same balanced sampling process, for early stopping / monitoring.
+
+Equivalently, if **T** is the training count, **validation** holds **0.2·T** images and **test** holds **0.3·T** images so that **T + 0.2T + 0.3T** is the full experimental subset and **(T + 0.2T) : 0.3T = 80 : 20**.
 
 ## Dataset
 
@@ -110,12 +120,12 @@ For this project, a preparation step will **sort and copy (or move) images** so 
 
 The notebook will accept at least:
 
-- Number of **train** images (chosen so each of the 16 categories contributes equally)
-- Number of **test** images
-- Number of **validation** images (parameters are supported for completeness; this project emphasizes **train** and **test**)
-- **Output path** for the reduced dataset
+- Target **training** count **T** (balanced across the 16 categories; each experimental dataset is **named after** **T**)
+- **Output path** for the reduced, class-balanced image pool (and mapping files in the same spirit as the originals)
 
-This step **only reorganizes** files and **writes a smaller dataset** plus a **new mapping file** in the same spirit as the originals (image path or name and label per line). For this proposal, modeling will focus on **training** and **test** splits: **test** is reserved for **unseen-data** evaluation. The reduced, balanced corpus supports **end-to-end experiments on a smaller scale** before scaling to the full RVL-CDIP training set.
+**Validation** and **test** sizes for each run follow the **train / validation / test** rules in **Structure of the notebook** (80/20 development vs held-out test, with validation equal to **20% of T** on non-overlapping images).
+
+This step **only reorganizes** files and **materializes a smaller dataset** suitable for sampling. **Test** remains reserved for **unseen-data** evaluation at the end of each experiment; **validation** supports training-time monitoring (accuracy/loss curves, early stopping). The reduced corpus supports **end-to-end experiments on a smaller scale** before scaling toward the full RVL-CDIP training set.
 
 ## Preprocessing
 
