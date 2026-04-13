@@ -559,6 +559,37 @@ The return value is a **`History`** object (here stored as **`simple_overfitting
 
 Tune **`steps_per_epoch`** / **`validation_steps`** if you set **`batch_size`** explicitly and need deterministic epoch length; otherwise Keras derives steps from the iterators.
 
+**Example `fit` log (CNN, Dataset ~16k train / ~3.2k validation):** excerpt from the notebook; **`500/500`** steps per epoch implies default **`batch_size=32`** on **~16,000** training images. **Training accuracy** climbs steadily while **validation accuracy** is noisier—a sign to rely on **`EarlyStopping`** on **`val_accuracy`** rather than training loss alone.
+
+```text
+Epoch 1/40
+500/500 [==============================] - 192s 361ms/step - loss: 3.3842 - accuracy: 0.1087 - val_loss: 2.3674 - val_accuracy: 0.2470
+Epoch 2/40
+500/500 [==============================] - 175s 349ms/step - loss: 2.1399 - accuracy: 0.3508 - val_loss: 2.0427 - val_accuracy: 0.4148
+Epoch 3/40
+500/500 [==============================] - 170s 339ms/step - loss: 1.7714 - accuracy: 0.5055 - val_loss: 2.0621 - val_accuracy: 0.4226
+Epoch 4/40
+500/500 [==============================] - 169s 338ms/step - loss: 1.5303 - accuracy: 0.6030 - val_loss: 2.0255 - val_accuracy: 0.4536
+Epoch 5/40
+500/500 [==============================] - 169s 338ms/step - loss: 1.3564 - accuracy: 0.6717 - val_loss: 2.1388 - val_accuracy: 0.4373
+Epoch 6/40
+500/500 [==============================] - 170s 339ms/step - loss: 1.2703 - accuracy: 0.7104 - val_loss: 2.8509 - val_accuracy: 0.2845
+Epoch 7/40
+500/500 [==============================] - 170s 339ms/step - loss: 1.2178 - accuracy: 0.7312 - val_loss: 2.2169 - val_accuracy: 0.4436
+Epoch 8/40
+500/500 [==============================] - 169s 337ms/step - loss: 1.1305 - accuracy: 0.7578 - val_loss: 2.1726 - val_accuracy: 0.4589
+Epoch 9/40
+500/500 [==============================] - 169s 337ms/step - loss: 1.0826 - accuracy: 0.7690 - val_loss: 2.3664 - val_accuracy: 0.4617
+Epoch 10/40
+500/500 [==============================] - 169s 337ms/step - loss: 1.0510 - accuracy: 0.7812 - val_loss: 2.5445 - val_accuracy: 0.3554
+Epoch 11/40
+500/500 [==============================] - 169s 337ms/step - loss: 1.0261 - accuracy: 0.7863 - val_loss: 2.4970 - val_accuracy: 0.3976
+Epoch 12/40
+500/500 [==============================] - 170s 340ms/step - loss: 0.9980 - accuracy: 0.7934 - val_loss: 2.2735 - val_accuracy: 0.4530
+Epoch 13/40
+500/500 [==============================] - 170s 339ms/step - loss: 0.9889 - accuracy: 0.7971 - val_loss: 2.4501 - val_accuracy: 0.4033
+```
+
 **Optional / aspirational:** shallow learners (**SVM**, **AdaBoost**) on **frozen** features were discussed earlier in the proposal; they are **out of scope** for this core **3 × 5** grid unless time allows.
 
 ## ML model (scope note)
