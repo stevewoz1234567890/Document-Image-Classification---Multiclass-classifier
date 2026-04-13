@@ -82,6 +82,14 @@ The notebook will accept at least:
 
 This step **only reorganizes** files and **writes a smaller dataset** plus a **new mapping file** in the same spirit as the originals (image path or name and label per line). For this proposal, modeling will focus on **training** and **test** splits: **test** is reserved for **unseen-data** evaluation. The reduced, balanced corpus supports **end-to-end experiments on a smaller scale** before scaling to the full RVL-CDIP training set.
 
+## Preprocessing
+
+**RVL-CDIP** images are often around **1000 × 754** pixels, but dimensions vary across the corpus. In preprocessing, every image **produced by the input-data step** (the reduced, mapped subset) will be **resized to 512 × 512** so that all samples share the same spatial size for later feature extraction and modeling.
+
+Because this is usually **downsampling** relative to the originals, resampling must limit **aliasing** (e.g., by using a high-quality filter or library options that apply **anti-aliasing** / low-pass behavior before decimation). Only images **listed in the prepared splits** are resized, keeping preprocessing aligned with the notebook’s output paths and mapping files.
+
+A unified **512 × 512** grid yields **262,144** scalar values per grayscale image if the patch is flattened to a **1-D** vector (512 × 512 = 262,144). The deliverable of this stage is a **512 × 512** dataset ready for **feature extraction**, with consistent geometry across train and test.
+
 ## Infrastructure details
 
 Development and training will run in **Google Colaboratory** (Colab), with **Google Drive** used for persistent storage (mounting Drive in notebooks to read the dataset and save checkpoints).
