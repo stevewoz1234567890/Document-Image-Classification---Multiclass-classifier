@@ -354,6 +354,26 @@ Development and training use **Google Colaboratory** with a **Colab Pro+** subsc
 
 Always confirm **GPU name**, **VRAM**, and **RAM** in the runtime panel after the session starts; Google can change backends without notice.
 
+**Notebook — check GPU and host RAM (Colab / Jupyter):** the `!nvidia-smi` line is IPython shell syntax; **`psutil`** is preinstalled on Colab. The **20 GB** threshold is a **rule of thumb** for spotting a **high-RAM** runtime—not an official Google flag.
+
+```python
+gpu_info = !nvidia-smi
+gpu_info = "\n".join(gpu_info)
+if gpu_info.find("failed") >= 0:
+    print("Not connected to a GPU")
+else:
+    print(gpu_info)
+
+from psutil import virtual_memory
+
+ram_gb = virtual_memory().total / 1e9
+print("Your runtime has {:.1f} gigabytes of available RAM\n".format(ram_gb))
+if ram_gb < 20:
+    print("Not using a high-RAM runtime")
+else:
+    print("You are using a high-RAM runtime!")
+```
+
 **Google Drive:** **200 GB** **Google One** / Drive subscription for the **compressed** archive, **uncompressed** or **resampled** data, and **checkpoints**. That budget fits the **~37 GB** tarball plus a **~100 GB** full extract with room for **PNGs** and models, or you can keep only **subsets** on Drive to preserve headroom.
 
 ## Conclusion
