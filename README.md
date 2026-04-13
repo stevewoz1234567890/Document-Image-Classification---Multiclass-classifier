@@ -316,6 +316,10 @@ python scripts/generate_resampled_dataset.py \
   --seed 42
 ```
 
+**Summary:** `generate_dataset` (and the CLI) build a new dataset from parameters **`height`**, **`width`**, and **`desired_size_per_category`** (maximum images sampled **per class folder**). Output keeps the same **directory tree** as the Keras-style source—e.g. **`train/0/` … `train/15/`**, **`test/0/` …**—so it can be passed straight to **`ImageDataGenerator.flow_from_directory`**. Files are written as **PNG**, which works smoothly with **Keras** **pre-trained** inputs and is smaller than **TIFF** for cloud storage.
+
+**Note:** Within each category folder, the images used are chosen **uniformly at random** from those available (up to the requested cap), avoiding bias from on-disk ordering.
+
 A unified target grid (e.g. **512 × 512**) yields **262,144** scalar values per **grayscale** image if flattened to a **1-D** vector. **Grayscale** can be saved as single-channel PNG or stacked to **3-channel** for RGB-pretrained nets, depending on the model. The deliverable of preprocessing is a **consistent** dataset (paths, size, format) ready for **feature extraction** and modeling.
 
 ## Feature extraction
