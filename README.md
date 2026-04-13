@@ -120,6 +120,22 @@ rvl-cdip/
     └── ...            # grayscale document images
 ```
 
+## Data exploration
+
+In this step the notebook **inspects** the release to understand the **images** and **labels** before preprocessing. The official split sizes are **320,000** training, **40,000** validation, and **40,000** test images (as in **Download dataset**). Images are **grayscale** scans whose **largest dimension does not exceed 1000** pixels (exact width/height varies by page).
+
+**Label files** under `labels/` (`train.txt`, `val.txt`, `test.txt`) list one sample per line:
+
+```text
+path/to/the/image.tif 3
+```
+
+Each line is **`path/to/the/image.tif`** (path relative to the dataset root or `images/`, depending on the release), then a **separator**, then the **integer category** **0–15**. (Some mirrors use multiple spaces or tabs; split on whitespace and take the last token as the class ID.)
+
+Categories are integers **0** through **15** in the fixed order **letter → form → email → … → memo** (full table in **Dataset** above).
+
+*(If you list classes **1–16** in prose, subtract one to match the ID in the label files.)*
+
 ## Input data
 
 The **RVL-CDIP** release provides a large number of images for training, validation, and testing. Working with the full corpus needs substantial compute, RAM, and disk space: the archive is about **37 GB** compressed, and roughly **~100 GB** on disk after extraction. As in the layout above, pixel data lives under **`images/`**, while splits and class IDs are defined by separate **mapping files** in **`labels/`** (`train.txt`, `val.txt`, `test.txt`).
