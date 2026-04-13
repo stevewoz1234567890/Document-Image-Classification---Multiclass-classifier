@@ -189,7 +189,54 @@ python scripts/organize_rvl_cdip_for_keras.py \
 After **Step 1**, the corpus is still at **native** resolutions across hundreds of thousands of files. Before choosing a target size and resampling policy, the notebook **profiles** the data and answers:
 
 1. **Do the images have different dimensions?** For **RVL-CDIP**, **yes**: widths and heights vary by scan; only the **longest side** is capped at about **1000** pixels in the release, so many distinct **(width, height)** pairs appear rather than a single global shape.
-2. **If so, is there a distribution of images by dimension?** The exploration step **measures** each image (or a **stratified sample** if scanning the full **400k** is too slow), then summarizes **frequency** of each **(W, H)** (or of **W**, **H**, and **max(W, H)** separately). Typical outputs are **histograms**, a **bar chart of the most common shapes**, and **summary statistics** (mean/median dimensions, counts per bucket). That confirms how aggressive resizing will be (mostly **downsampling** vs occasional **upsampling**) and motivates **anti-aliasing** when shrinking.
+2. **If so, is there a distribution of images by dimension?** The exploration step **measures** each image (or a **stratified sample** if scanning the full **400k** is too slow), then summarizes **frequency** of each shape **(H, W)** from the array (and optionally **max(H, W)** buckets). Typical outputs are **histograms** or **bar charts** of the most common sizes, plus **min/max** height and width across the corpus. That shows how aggressive resizing will be (mostly **downsampling** vs occasional **upsampling**) and motivates **anti-aliasing** when shrinking.
+
+**Notebook sketch** (suppress heavy output with `%%capture` on the first cell if desired):
+
+```python
+# Min/max and per-shape counts over train/test/(val) trees — uses scikit-image
+import os
+import matplotlib.pyplot as plt
+import skimage.io as skio
+
+base_path = "/path/to/rvl-cdip"  # Keras-style root after Step 1
+size_dir = {}
+
+for root, dirs, files in os.walk(base_path):
+    for file in files:
+        file_path = os.path.join(root, file)
+        if ".tif" not in file_path.lower():
+            continue
+        # Optional: skip paths with '_' if you use a naming convention; often better to omit this.
+        # if "_" in file_path:
+        #     continue
+        img = skio.imread(file_path)
+        if img.ndim != 2:
+            continue  # grayscale RVL-CDIP → (H, W); skip accidental RGB stacks
+        key = img.shape
+        size_dir[key] = size_dir.get(key, 0) + 1
+
+# Bar-style view: shapes with more than 3000 images (tune threshold)
+filtered = {f"{h}_{w}": c for (h, w), c in size_dir.items() if c > 3000}
+lists = sorted(filtered.items(), key=lambda kv: kv[1], reverse=True)
+if lists:
+    labels, counts = zip(*lists)
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.bar(range(len(labels)), counts)
+    ax.set_xticks(range(len(labels)))
+    ax.set_xticklabels(labels, rotation=75, ha="right")
+    ax.set_xlabel("height_width (pixels)")
+    ax.set_ylabel("number of images")
+    ax.set_title("Number of images by dimension")
+    fig.tight_layout()
+    plt.show()
+```
+
+For a faster pass over huge trees, use [`scripts/analyze_rvl_cdip_dimensions.py`](scripts/analyze_rvl_cdip_dimensions.py) (**Pillow** metadata; optional **`--save-plot`**) after `pip install -r requirements.txt`:
+
+```bash
+python scripts/analyze_rvl_cdip_dimensions.py --root /path/to/rvl-cdip --min-count 3000
+```
 
 With that baseline understood, images used for modeling are **resized to 512 × 512** (see earlier **Preprocessing** discussion) so every batch tensor has fixed spatial extent.
 
