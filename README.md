@@ -157,11 +157,44 @@ This step **only reorganizes** files and **materializes a smaller dataset** suit
 
 ## Preprocessing
 
-**RVL-CDIP** images are often around **1000 × 754** pixels, but dimensions vary across the corpus. In preprocessing, every image **produced by the input-data step** (the reduced, mapped subset) will be **resized to 512 × 512** so that all samples share the same spatial size for later feature extraction and modeling.
+Preprocessing follows the notebook stages: **(1) reorganize** images for the loader, **(2) resize** (and related image ops), and **(3) format** conversion when needed (e.g. **.tif → .png**).
+
+### Step 1 — Reorganize images (Keras-friendly layout)
+
+The official release stores all pixels under a single **`images/`** tree while **`labels/*.txt`** list `(path, class_id)` rows. That layout is awkward for **`ImageDataGenerator.flow_from_directory`** (and similar APIs), which expect **`train/`** and **`test/`** (and optionally **`validation/`**) with **one subfolder per class**.
+
+For this project, images are sorted into:
+
+```text
+<target>/train/0/  ... <target>/train/15/
+<target>/test/0/   ... <target>/test/15/
+```
+
+using **`labels/train.txt`** and **`labels/test.txt`** (**320k** train, **40k** test per the release). **Note:** this step uses **train** and **test** only here; you can mirror the same pattern for **`val.txt`** if you train against the official validation split.
+
+Example layout after reorganizing:
+
+![Step 1: train/test with class folders 0–15 for Keras](docs/preprocessing-reorganize-keras.png)
+
+A small CLI wraps the same logic as the notebook (defaults to **copy**; pass **`--move`** only if you want to empty the original `images/` tree):
+
+```bash
+python scripts/organize_rvl_cdip_for_keras.py \
+  --source /path/to/rvl-cdip-orig \
+  --target /path/to/rvl-cdip-keras
+```
+
+### Step 2 — Resize and unify geometry
+
+**RVL-CDIP** images are often around **1000 × 754** pixels, but dimensions vary across the corpus. After reorganization (or on the reduced subset from **Input data**), images targeted for modeling are **resized to 512 × 512** so that all samples share the same spatial size for later feature extraction and modeling.
 
 Because this is usually **downsampling** relative to the originals, resampling must limit **aliasing** (e.g., by using a high-quality filter or library options that apply **anti-aliasing** / low-pass behavior before decimation). Only images **listed in the prepared splits** are resized, keeping preprocessing aligned with the notebook’s output paths and mapping files.
 
-A unified **512 × 512** grid yields **262,144** scalar values per grayscale image if the patch is flattened to a **1-D** vector (512 × 512 = 262,144). The deliverable of this stage is a **512 × 512** dataset ready for **feature extraction**, with consistent geometry across train and test.
+### Step 3 — Reformat (optional)
+
+Some pipelines prefer **PNG** (or **JPEG**) over **TIFF**. When a stack does not read **.tif** efficiently, convert after organize/resize using **Pillow**, **imageio**, or **skimage** so every tensor sees a single dtype and channel layout (**grayscale** stays **1-channel** or **3-channel** duplicate as required by the model).
+
+A unified **512 × 512** grid yields **262,144** scalar values per grayscale image if the patch is flattened to a **1-D** vector (512 × 512 = 262,144). The deliverable of preprocessing is a **consistent** dataset (paths, size, and format) ready for **feature extraction** and modeling.
 
 ## Feature extraction
 
