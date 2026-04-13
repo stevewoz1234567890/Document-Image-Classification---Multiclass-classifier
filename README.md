@@ -254,7 +254,67 @@ The release is mostly **TIFF (`.tif`)**, which is awkward for many **Keras** **p
 
 **Reusable resize + export:** instead of a one-off batch job, preprocessing is wrapped in a **reusable function** (parameterized **output size**, paths, and sample counts) so the same code can regenerate **different-sized** datasets (**224²**, **512²**, etc.) as experiments evolve. Given **compute** and **storage** limits, the project may **not** process the **entire** corpus every time—subsets are drawn per configuration.
 
-**Sampling:** when selecting which files to process from each class folder, the notebook uses a **random permutation** of filenames (or draws a **random sample**) so the subset is not biased by **lexicographic** or **filesystem** ordering.
+**Sampling:** when selecting which files to process from each class folder, the notebook uses **`random.sample`** over eligible **`.tif`** paths (skipping macOS **`._*`** forks) so the subset is not biased by **directory listing order**.
+
+**Notebook — `generate_dataset` (concept):** walk the Keras-style tree; in each leaf directory with TIFFs, draw up to **`desired_size_per_category`** files at random; **`skimage.transform.resize`** with **`anti_aliasing=True`** and **`preserve_range=True`**; write **`.png`** under **`target_path`** with the same relative paths as **`source_path`**. Note: **`resize`** expects **`output_shape = (height, width)`** (rows × columns), not `(width, height)`.
+
+```python
+import os
+import random
+import numpy as np
+import skimage.io as skio
+import skimage.transform as sktran
+
+
+def generate_dataset(width, height, target_path, source_path, desired_size_per_category, seed=None):
+    if seed is not None:
+        random.seed(seed)
+    source_path = os.path.abspath(source_path)
+    target_path = os.path.abspath(target_path)
+    category = 0
+    for root, _dirs, files in os.walk(source_path):
+        tifs = [
+            f
+            for f in files
+            if f.lower().endswith((".tif", ".tiff")) and not f.startswith("._")
+        ]
+        if not tifs:
+            continue
+        k = min(desired_size_per_category, len(tifs))
+        chosen = set(random.sample(tifs, k))
+        print(f"{root}: {len(tifs)} TIFFs, using {k} at random")
+
+        for fname in files:
+            if fname not in chosen:
+                continue
+            src = os.path.join(root, fname)
+            img = skio.imread(src)
+            if img.size == 0:
+                continue
+            resized = sktran.resize(
+                img.astype(np.float64),
+                (height, width),  # skimage: (rows, cols) = (height, width)
+                anti_aliasing=True,
+                preserve_range=True,
+            )
+            rel = os.path.relpath(src, source_path)
+            dst = os.path.join(target_path, os.path.splitext(rel)[0] + ".png")
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            out = np.clip(np.round(resized), 0, 255).astype(np.uint8)
+            skio.imsave(dst, out, check_contrast=False)
+        category += 1
+```
+
+CLI equivalent (same logic, portable paths): [`scripts/generate_resampled_dataset.py`](scripts/generate_resampled_dataset.py)
+
+```bash
+python scripts/generate_resampled_dataset.py \
+  --width 512 --height 512 \
+  --source /path/to/rvl-cdip-tif \
+  --target /path/to/rvl-cdip-png \
+  --per-class 1000 \
+  --seed 42
+```
 
 A unified target grid (e.g. **512 × 512**) yields **262,144** scalar values per **grayscale** image if flattened to a **1-D** vector. **Grayscale** can be saved as single-channel PNG or stacked to **3-channel** for RGB-pretrained nets, depending on the model. The deliverable of preprocessing is a **consistent** dataset (paths, size, format) ready for **feature extraction** and modeling.
 
