@@ -492,17 +492,46 @@ Training for the **CNN**, **EfficientNetB0**, and **ResNet50** runs uses **`Earl
 - **Direction:** **`mode='max'`** (higher accuracy is better).
 
 ```python
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow import keras
 
-early_stop = EarlyStopping(
-    monitor="val_accuracy",
-    patience=4,
-    mode="max",
-    restore_best_weights=True,  # optional: roll back to best val_accuracy epoch
+callbacks_list = [
+    keras.callbacks.EarlyStopping(
+        monitor="val_accuracy",
+        patience=4,  # stop after 4 epochs with no improvement in val_accuracy
+        mode="max",
+    )
+]
+
+# model.fit(..., callbacks=callbacks_list, validation_data=val_or_test_it, ...)
+```
+
+**Validation data:** `val_accuracy` is only logged if `fit` receives **`validation_data`** (or **`validation_split`** on arrays). If your on-disk layout has only **`train/`** and **`test/`**, a common notebook pattern is **`validation_data=test_it`** so early stopping has a stream to score—reserve a separate **`validation/`** folder if you want a clean held-out **test** set for final metrics only.
+
+### `ImageDataGenerator` (train and test directories)
+
+After exporting PNGs under **`train/<class>/`** and **`test/<class>/`** (see **Preprocessing**), **`ImageDataGenerator.flow_from_directory`** yields batches aligned with **`target_size=(height, width)`** (here **1024×768** to match the CNN **`input_shape`**). **`class_mode='categorical'`** matches **`categorical_crossentropy`** and one-hot labels.
+
+```python
+from tensorflow import keras
+
+datagen = keras.preprocessing.image.ImageDataGenerator()
+
+train_it = datagen.flow_from_directory(
+    "/content/sample_1000/rvl-cdip/train/",
+    class_mode="categorical",
+    target_size=(1024, 768),
+    color_mode="grayscale",
 )
 
-# model.fit(..., callbacks=[early_stop], validation_data=val_gen, ...)
+test_it = datagen.flow_from_directory(
+    "/content/sample_1000/rvl-cdip/test/",
+    class_mode="categorical",
+    target_size=(1024, 768),
+    color_mode="grayscale",
+)
 ```
+
+On **local disk**, replace **`/content/...`** with your path (e.g. **`/Volumes/T7/sample_1000/rvl-cdip/train/`**). Set **`shuffle=False`** on **`test_it`** when using it only for evaluation so metrics are reproducible.
 
 **Optional / aspirational:** shallow learners (**SVM**, **AdaBoost**) on **frozen** features were discussed earlier in the proposal; they are **out of scope** for this core **3 × 5** grid unless time allows.
 
