@@ -590,6 +590,44 @@ Epoch 13/40
 500/500 [==============================] - 170s 339ms/step - loss: 0.9889 - accuracy: 0.7971 - val_loss: 2.4501 - val_accuracy: 0.4033
 ```
 
+### Plot loss and accuracy (`History`)
+
+Keras stores per-epoch **`loss`**, **`val_loss`**, **`accuracy`**, and **`val_accuracy`** on the object returned by **`fit`**. The curves below use **`val_*`** (here fed from the **`test_it`** iterator as **`validation_data`**—in the plots you may label that split **“test”** or **“validation”** depending on how you use it).
+
+```python
+import matplotlib.pyplot as plt
+
+
+def plot_loss(history):
+    train_loss = history.history["loss"]
+    val_loss = history.history["val_loss"]
+    x = list(range(1, len(val_loss) + 1))
+    plt.plot(x, val_loss, color="red", label="Validation loss")
+    plt.plot(x, train_loss, color="blue", label="Training loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Loss vs. Epoch")
+    plt.legend()
+    plt.show()
+
+
+def plot_accuracy(history):
+    train_acc = history.history["accuracy"]
+    val_acc = history.history["val_accuracy"]
+    x = list(range(1, len(val_acc) + 1))
+    plt.plot(x, val_acc, color="red", label="Validation accuracy")
+    plt.plot(x, train_acc, color="blue", label="Training accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Accuracy vs. Epoch")
+    plt.legend()
+    plt.show()
+
+
+# plot_loss(simple_overfitting_model)
+# plot_accuracy(simple_overfitting_model)
+```
+
 **Optional / aspirational:** shallow learners (**SVM**, **AdaBoost**) on **frozen** features were discussed earlier in the proposal; they are **out of scope** for this core **3 × 5** grid unless time allows.
 
 ## ML model (scope note)
