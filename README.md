@@ -54,7 +54,7 @@ flowchart TD
 
 - **Reorganize images** — place files in a consistent folder layout (e.g., by class or split).
 - **Resize images** — standardize resolution for the model (see the **Preprocessing** section).
-- **Reformat** — convert inputs such as **.tif** to **.png** when required for the training stack.
+- **Reformat** — convert **.tif** to **.png** for smaller Drive footprint and **Keras** pre-trained pipelines (see **Preprocessing**, Step 3).
 
 **Dataset size:** the diamond re-runs **modeling** for training subsets on the order of **1,600**, **8,000**, **16,000**, **32,000**, and **160,000** **training** images (see split note below).
 
@@ -157,7 +157,7 @@ This step **only reorganizes** files and **materializes a smaller dataset** suit
 
 ## Preprocessing
 
-Preprocessing follows the notebook stages: **(1) reorganize** images for the loader, **(2) resize** (and related image ops), and **(3) format** conversion when needed (e.g. **.tif → .png**).
+Preprocessing follows the notebook stages: **(1) reorganize** images for the loader, **(2) resize** to a target resolution (with dimension exploration first), and **(3) reformat** **.tif → .png** for **Keras** pre-trained models and **smaller** cloud storage.
 
 ### Step 1 — Reorganize images (Keras-friendly layout)
 
@@ -238,15 +238,25 @@ For a faster pass over huge trees, use [`scripts/analyze_rvl_cdip_dimensions.py`
 python scripts/analyze_rvl_cdip_dimensions.py --root /path/to/rvl-cdip --min-count 3000
 ```
 
-With that baseline understood, images used for modeling are **resized to 512 × 512** (see earlier **Preprocessing** discussion) so every batch tensor has fixed spatial extent.
+#### Answers (dimension exploration)
 
-Because this is usually **downsampling** relative to the originals, resampling must limit **aliasing** (e.g., by using a high-quality filter or library options that apply **anti-aliasing** / low-pass behavior before decimation). Only images **listed in the prepared splits** are resized, keeping preprocessing aligned with the notebook’s output paths and mapping files.
+1. **Images vary in size.** The bar chart of shapes with **at least 3,000** images shows that the **mode** is close to **1000 × 754** pixels: that single **(H, W)** bin has the **largest** count, yet it still covers only about **46%** of all images—the remainder spread across many other resolutions.
+2. **Resizing to a fixed square (e.g. 512 × 512)** therefore **downsamples** some pages and **upsamples** others relative to their native size. For **downsampling**, resampling should limit **aliasing** (high-quality filters, library **anti-aliasing** options, or low-pass behavior before decimation).
 
-### Step 3 — Reformat (optional)
+The modeling pipeline applies this resize to the images selected for each experiment (not necessarily the full **400k** train split when **compute** or **storage** is limited).
 
-Some pipelines prefer **PNG** (or **JPEG**) over **TIFF**. When a stack does not read **.tif** efficiently, convert after organize/resize using **Pillow**, **imageio**, or **skimage** so every tensor sees a single dtype and channel layout (**grayscale** stays **1-channel** or **3-channel** duplicate as required by the model).
+### Step 3 — Reformat images (TIFF → PNG)
 
-A unified **512 × 512** grid yields **262,144** scalar values per grayscale image if the patch is flattened to a **1-D** vector (512 × 512 = 262,144). The deliverable of preprocessing is a **consistent** dataset (paths, size, and format) ready for **feature extraction** and modeling.
+The release is mostly **TIFF (`.tif`)**, which is awkward for many **Keras** **pre-trained** workflows (inputs are commonly **PNG**/**JPEG** or arrays loaded through stacks tuned for those formats). The notebook converts to **PNG** for two reasons:
+
+1. **PNG** files are typically **much smaller** than the originals, which eases **upload and sync to Google Drive** under quota limits.
+2. **PNG** inputs align with the path of least resistance for **Keras** **pre-trained** models and standard `ImageDataGenerator` / `flow_from_directory` setups.
+
+**Reusable resize + export:** instead of a one-off batch job, preprocessing is wrapped in a **reusable function** (parameterized **output size**, paths, and sample counts) so the same code can regenerate **different-sized** datasets (**224²**, **512²**, etc.) as experiments evolve. Given **compute** and **storage** limits, the project may **not** process the **entire** corpus every time—subsets are drawn per configuration.
+
+**Sampling:** when selecting which files to process from each class folder, the notebook uses a **random permutation** of filenames (or draws a **random sample**) so the subset is not biased by **lexicographic** or **filesystem** ordering.
+
+A unified target grid (e.g. **512 × 512**) yields **262,144** scalar values per **grayscale** image if flattened to a **1-D** vector. **Grayscale** can be saved as single-channel PNG or stacked to **3-channel** for RGB-pretrained nets, depending on the model. The deliverable of preprocessing is a **consistent** dataset (paths, size, format) ready for **feature extraction** and modeling.
 
 ## Feature extraction
 
