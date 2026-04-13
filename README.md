@@ -483,7 +483,26 @@ nn.compile(
 | 4 | **32,000** | 2,000 | **A–C.** Same three models, retrained on this split |
 | 5 | **160,000** | 10,000 | **A–C.** Same three models, retrained on this split |
 
-**Early stopping:** every run uses **`EarlyStopping`** on **validation accuracy** with **`patience = 4`** epochs—training halts if **val accuracy** does not improve for **four** consecutive epochs.
+### Early stopping (validation accuracy)
+
+Training for the **CNN**, **EfficientNetB0**, and **ResNet50** runs uses **`EarlyStopping`** so epochs are not wasted once **validation accuracy** plateaus.
+
+- **Monitored quantity:** **`val_accuracy`** (Keras logs this when `metrics=['accuracy']` and a **`validation_data`** / **`validation_split`** is provided).
+- **Rule:** if **`val_accuracy`** does **not** strictly improve over **`patience = 4`** consecutive epochs, training **stops**.
+- **Direction:** **`mode='max'`** (higher accuracy is better).
+
+```python
+from tensorflow.keras.callbacks import EarlyStopping
+
+early_stop = EarlyStopping(
+    monitor="val_accuracy",
+    patience=4,
+    mode="max",
+    restore_best_weights=True,  # optional: roll back to best val_accuracy epoch
+)
+
+# model.fit(..., callbacks=[early_stop], validation_data=val_gen, ...)
+```
 
 **Optional / aspirational:** shallow learners (**SVM**, **AdaBoost**) on **frozen** features were discussed earlier in the proposal; they are **out of scope** for this core **3 × 5** grid unless time allows.
 
