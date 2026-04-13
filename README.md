@@ -62,7 +62,7 @@ flowchart TD
 
 **Observed pool sizes (example machine):** under **`/Volumes/T7/rvl-cdip/train/<class>/`**, each class folder holds on the order of **~19.8k–20.1k** TIFFs (consistent with **~20k** train images per class in RVL-CDIP). `generate_dataset` logs one line per directory, e.g. `Directory .../train/15 has 19975 files, we have to choose 1000 files (randomly).` — then it writes **1,000** random **PNG**s per class. Under **`.../rvl-cdip/test/<class>/`**, pools are **~2.4k–2.6k** TIFFs per class (about **2,500** on average, matching **40k** test ÷ **16**), with log lines such as `Directory .../test/3 has 2532 files, we have to choose 200 files (randomly).` That pass writes **200** random **PNG**s per class (**3,200** total).
 
-**Models** (three per dataset size — see **Modeling**): **CNN** (conv + **ReLU**, **MaxPool**, **BatchNorm**, **Dropout**, **L2** on dense, **softmax**), **EfficientNetB0**, **ResNet50**. **Early stopping** on **validation accuracy**, **patience = 4** epochs.
+**Models** (three per dataset size — see **Modeling**): **CNN** (**Conv2D** + **LeakyReLU** / **ReLU**, **MaxPool**, **BatchNorm**, **Dropout**, **Dense(16)** bottleneck + **L2**, **softmax**), **EfficientNetB0**, **ResNet50**. **Early stopping** on **validation accuracy**, **patience = 4** epochs.
 
 Each model is trained on the same **train / validation / test** layout for that subset. After every run, the notebook records **training accuracy**, **validation accuracy**, **training loss**, **validation loss**, **execution time**, **number of epochs**, and related settings. **Collect observations** aggregates these runs; the final **conclusion** compares models and recommends a preferred setup from the metrics.
 
@@ -389,30 +389,57 @@ Training compares **three** model families on the **same** sampled datasets, acr
 
 ### Convolutional neural network (CNN)
 
-This **CNN** is built to **classify document images** into the **16** RVL-CDIP categories for each sampled dataset. The figure matches the overall topology (layer colors may show **LeakyReLU**); the **Keras** listing below uses **`activation='relu'`** on conv/dense blocks for simplicity.
+This **CNN** is built to **classify document images** into the **16** RVL-CDIP categories for each sampled dataset. The schematic figure matches the **same** topology as the **`model.summary()`** below (tensor shapes are for **`input_shape=(1024, 768, 1)`** with **valid** **3×3** convs).
 
 ![CNN architecture for 16-way document image classification](docs/cnn-architecture.png)
 
-**Block summary (match `input_shape` to your PNGs, e.g. `(1024, 768, 1)` or `(1000, 768, 1)`):**
+**Block summary (`input_shape=(1024, 768, 1)`; adjust for `(1000, 768, 1)` if needed):**
 
-1. **Conv2D** 32 × **3×3**, **ReLU**.
-2. **MaxPool2D** **2×2** → **BatchNormalization** → **Conv2D** 16 × **3×3**, **ReLU**.
-3. **MaxPool2D** **2×2** → **Conv2D** 8 × **3×3**, **ReLU**.
-4. **MaxPool2D** **2×2** → **Dropout** (**0.10**).
-5. **Flatten**.
-6. **Dense(4096)**, **ReLU**, **L2(0.001)** → **Dropout** (**0.15**) → **Dense(2048)**, **ReLU** → **Dense(16)**, **softmax**.
+1. **Conv2D** 32 × **3×3** (linear) → **LeakyReLU** (**α = 0.2**) → **(1022, 766, 32)**.
+2. **MaxPool2D** **2×2** → **(511, 383, 32)** → **BatchNormalization** (**momentum 0.8**).
+3. **Conv2D** 16 × **3×3**, **ReLU** → **MaxPool2D** → **Conv2D** 8 × **3×3**, **ReLU** → **MaxPool2D** → **(126, 94, 8)**.
+4. **Dropout** (**0.10**) → **Flatten** → **94,752** → **LeakyReLU** (**α = 0.1**).
+5. **Dense(16)**, **ReLU**, **L2(0.001)** (bottleneck) → **Dropout** (**0.15**) → **Dense(4096)**, **ReLU** → **Dense(2048)**, **ReLU** → **Dense(16)**, **softmax**.
 
-**High-level summary:** As in the figure, the stack begins with a **convolution** that expands the input into **32 feature maps** (“**32 channels**” after the first conv; the underlying page is usually **one** grayscale channel, sometimes duplicated for compatibility with wider kernels). Nonlinearities use the **rectified linear** family—**ReLU** in the Keras code below; the diagram may show **LeakyReLU** as a variant. **Max-pooling** takes the **maximum** over each pooling window so the **spatial** size drops by about **half** at each pool stage, reducing parameters and building translation tolerance. **L2 weight regularization** on the first wide **Dense** layer together with **Dropout** limits **overfitting** on smaller sampled sets. The head ends with **softmax** over **16** classes.
+**High-level summary:** The first **convolution** produces **32** feature maps; **LeakyReLU** and **ReLU** provide piecewise-linear activations. **Max-pooling** halves spatial size at each pool step. **Batch normalization** stabilizes mid-stack features; **dropout** and **L2** on the **Dense(16)** bottleneck reduce **overfitting**. The tail **expands** to **4096** and **2048** units, then **softmax** over **16** classes.
 
-**Keras `Sequential` (notebook-aligned):** the cell below matches the intended architecture. Fixes applied from an earlier draft: do **not** stack **`activation='relu'`** on **`Conv2D`** and a separate **`LeakyReLU`** on the same output; do **not** place a small **`Dense(16)`** **before** **`Dense(4096)`** (the wide layers must come **after** **`Flatten`**); use **`L2`** regularizer consistently with the comment; **`softmax`** has **16** units for document classes (not 10). Runnable helper: [`doc_models/document_cnn.py`](doc_models/document_cnn.py) (`build_document_cnn`, `input_shape` e.g. `(1024, 768, 1)` or `(1000, 768, 1)` to match your PNG pipeline).
+**`model.summary()` (notebook):**
+
+```text
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #
+=================================================================
+ conv2d (Conv2D)             (None, 1022, 766, 32)        320
+ leaky_re_lu (LeakyReLU)     (None, 1022, 766, 32)          0
+ max_pooling2d (MaxPooling2D) (None, 511, 383, 32)          0
+ batch_normalization         (None, 511, 383, 32)        128
+ conv2d_1 (Conv2D)           (None, 509, 381, 16)       4,624
+ max_pooling2d_1             (None, 254, 190, 16)          0
+ conv2d_2 (Conv2D)           (None, 252, 188, 8)        1,160
+ max_pooling2d_2             (None, 126, 94, 8)            0
+ dropout (Dropout)           (None, 126, 94, 8)            0
+ flatten (Flatten)           (None, 94752)                 0
+ leaky_re_lu_1 (LeakyReLU)   (None, 94752)                 0
+ dense (Dense)               (None, 16)              1,516,048
+ dropout_1 (Dropout)         (None, 16)                    0
+ dense_1 (Dense)             (None, 4096)             69,632
+ dense_2 (Dense)             (None, 2048)          8,390,656
+ dense_3 (Dense)             (None, 16)               32,784
+=================================================================
+Total params: 10,015,352
+Trainable params: 10,015,288
+Non-trainable params: 64
+```
+
+**Keras `Sequential` (matches summary):** runnable helper [`doc_models/document_cnn.py`](doc_models/document_cnn.py) (`build_document_cnn`).
 
 ```python
 from tensorflow.keras import layers, models, regularizers
 
 nn = models.Sequential()
-nn.add(
-    layers.Conv2D(32, (3, 3), activation="relu", input_shape=(1024, 768, 1))
-)
+nn.add(layers.Conv2D(32, (3, 3), input_shape=(1024, 768, 1)))
+nn.add(layers.LeakyReLU(alpha=0.2))
 nn.add(layers.MaxPooling2D((2, 2)))
 nn.add(layers.BatchNormalization(momentum=0.8))
 nn.add(layers.Conv2D(16, (3, 3), activation="relu"))
@@ -421,14 +448,16 @@ nn.add(layers.Conv2D(8, (3, 3), activation="relu"))
 nn.add(layers.MaxPooling2D((2, 2)))
 nn.add(layers.Dropout(rate=0.10))
 nn.add(layers.Flatten())
+nn.add(layers.LeakyReLU(alpha=0.1))
 nn.add(
     layers.Dense(
-        4096,
+        16,
         activation="relu",
         kernel_regularizer=regularizers.L2(l2=0.001),
     )
 )
 nn.add(layers.Dropout(rate=0.15))
+nn.add(layers.Dense(4096, activation="relu"))
 nn.add(layers.Dense(2048, activation="relu"))
 nn.add(layers.Dense(16, activation="softmax"))
 nn.summary()
