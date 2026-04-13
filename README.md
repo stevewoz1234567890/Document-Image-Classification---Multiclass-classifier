@@ -74,11 +74,19 @@ Each model is trained and evaluated on the same **train / validation / test** la
 
 Equivalently, if **T** is the training count, **validation** holds **0.2·T** images and **test** holds **0.3·T** images so that **T + 0.2T + 0.3T** is the full experimental subset and **(T + 0.2T) : 0.3T = 80 : 20**.
 
+## Download dataset
+
+This project uses **RVL-CDIP** (*Ryerson Vision Lab Complex Document Information Processing*): scanned **grayscale** document images in **16** classes (e.g., letter, form, email, resume, memo, and others in the table below). The release is **public**; the archive is typically named **`rvl-cdip.tar.gz`**, about **37 GB** compressed. Uncompressed on disk, the corpus is on the order of **~100 GB**.
+
+The full split is fixed in the source distribution: **320,000** training, **40,000** validation, and **40,000** test images (often described as **train / validation / test** or **train / dev / test**). **Note:** all images are **grayscale**.
+
+**Reference:** A. W. Harley, A. Ufkes, K. G. Derpanis, *Evaluation of Deep Convolutional Nets for Document Image Classification and Retrieval,* ICDAR, 2015 — [https://www.cs.cmu.edu/~aharley/icdar15](https://www.cs.cmu.edu/~aharley/icdar15)
+
 ## Dataset
 
-The **RVL-CDIP** (Ryerson Vision Lab Complex Document Information Processing) dataset consists of 400,000 grayscale images in 16 classes, with 25,000 images per class. There are 320,000 training images, 40,000 validation images, and 40,000 test images. The images are sized so their largest dimension does not exceed 1000 pixels.
+The **RVL-CDIP** dataset contains **400,000** images in **16** balanced classes (**25,000** per class). Official splits: **320k / 40k / 40k** for train, validation, and test. Image dimensions vary; the largest side is capped around **1000** pixels in the release.
 
-Dataset size is **37 GB** (compressed), available as `rvl-cdip.tar.gz`. The categories are numbered **0–15**, in the following order:
+The compressed archive (**~37 GB**, `rvl-cdip.tar.gz`) unpacks to a tree summarized below. Class IDs **0–15** follow this order:
 
 | ID | Category |
 |----|----------|
@@ -114,7 +122,7 @@ rvl-cdip/
 
 ## Input data
 
-The **RVL-CDIP** release provides a large number of images for training, validation, and testing. Working with the full corpus needs substantial compute, RAM, and disk space: the archive is about **37 GB** compressed, and roughly **50 GB** on disk after extraction. As in the layout above, pixel data lives under **`images/`**, while splits and class IDs are defined by separate **mapping files** in **`labels/`** (`train.txt`, `val.txt`, `test.txt`).
+The **RVL-CDIP** release provides a large number of images for training, validation, and testing. Working with the full corpus needs substantial compute, RAM, and disk space: the archive is about **37 GB** compressed, and roughly **~100 GB** on disk after extraction. As in the layout above, pixel data lives under **`images/`**, while splits and class IDs are defined by separate **mapping files** in **`labels/`** (`train.txt`, `val.txt`, `test.txt`).
 
 For this project, a preparation step will **sort and copy (or move) images** so that every image for a given category sits under **one folder per class**. From those class folders, a script or **Jupyter** notebook will **sample a balanced subset**—the same number of images per category—so downstream training does not inherit **class imbalance** from an arbitrary slice of the corpus.
 
@@ -157,7 +165,7 @@ Deliverables for this stage include **training-set** summaries of **accuracy**, 
 
 Development and training will run in **Google Colaboratory** (Colab), with **Google Drive** used for persistent storage (mounting Drive in notebooks to read the dataset and save checkpoints).
 
-The plan is to start with **Colab Pro** for better GPU access during exploratory training; **Colab Pro+** is an option if longer runs or more sustained GPU availability is needed. On the storage side, a **Google Drive** subscription at the **100 GB** tier should be sufficient for the compressed archive, extracted files, and model outputs alongside the **RVL-CDIP** dataset.
+The plan is to start with **Colab Pro** for better GPU access during exploratory training; **Colab Pro+** is an option if longer runs or more sustained GPU availability is needed. On the storage side, a **Google Drive** subscription at the **100 GB** tier fits **staged** copies (compressed archive, sampled subsets, checkpoints); keeping the **full ~100 GB** extract plus the **~37 GB** archive on Drive at once may require **more capacity** or external disk.
 
 ## Conclusion
 
@@ -169,4 +177,4 @@ As the last step of the modeling workflow, candidate models will be **evaluated 
 
 - **Dataset (Kaggle):** [https://www.kaggle.com/pdavpoojan/the-rvlcdip-dataset-test](https://www.kaggle.com/pdavpoojan/the-rvlcdip-dataset-test)
 - **RVL-CDIP overview (Medium / Analytics Vidhya):** [https://medium.com/analytics-vidhya/rvl-cdip-ryerson-vision-lab-complex-document-information-processing-aa30b00a2b1e](https://medium.com/analytics-vidhya/rvl-cdip-ryerson-vision-lab-complex-document-information-processing-aa30b00a2b1e)
-- **Harley, Ufkes & Derpanis (2015),** *Evaluation of Deep Convolutional Nets for Document Image Classification and Retrieval:* [https://arxiv.org/pdf/1502.07058v1.pdf](https://arxiv.org/pdf/1502.07058v1.pdf)
+- **Harley, Ufkes & Derpanis (2015),** *Evaluation of Deep Convolutional Nets for Document Image Classification and Retrieval* (ICDAR): [https://www.cs.cmu.edu/~aharley/icdar15](https://www.cs.cmu.edu/~aharley/icdar15) — PDF: [https://arxiv.org/pdf/1502.07058v1.pdf](https://arxiv.org/pdf/1502.07058v1.pdf)
