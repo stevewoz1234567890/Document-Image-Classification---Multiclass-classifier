@@ -533,6 +533,28 @@ test_it = datagen.flow_from_directory(
 
 On **local disk**, replace **`/content/...`** with your path (e.g. **`/Volumes/T7/sample_1000/rvl-cdip/train/`**). Set **`shuffle=False`** on **`test_it`** when using it only for evaluation so metrics are reproducible.
 
+**Typical `flow_from_directory` log (Dataset “16,000”):**
+
+```text
+Found 15999 images belonging to 16 classes.
+Found 3199 images belonging to 16 classes.
+```
+
+That is **~16,000** training images (**1,000** × **16**, minus one missing or skipped file) and **~3,200** images in the second directory (**200** × **16**, minus one)—still **16** classes. Small gaps vs nominal counts usually mean a failed save, unreadable PNG, or name collision if **train** and **test** outputs ever shared the same folder.
+
+**Fit (this configuration):** train with **~16,000** images and use the **test** iterator as **validation** for **`val_accuracy`** and **early stopping** (~**3,200** images):
+
+```python
+history = nn.fit(
+    train_it,
+    validation_data=test_it,
+    epochs=100,  # upper cap; EarlyStopping will cut this short
+    callbacks=callbacks_list,
+)
+```
+
+Tune **`steps_per_epoch`** / **`validation_steps`** if you fix **`batch_size`** and want exact epoch coverage; with default batching, Keras infers steps from the iterators.
+
 **Optional / aspirational:** shallow learners (**SVM**, **AdaBoost**) on **frozen** features were discussed earlier in the proposal; they are **out of scope** for this core **3 × 5** grid unless time allows.
 
 ## ML model (scope note)
