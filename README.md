@@ -16,6 +16,19 @@ Complex documents present a great challenge to the field of document recognition
 
 Build a model to classify input document images as one of sixteen predefined categories. The project will use a publicly available dataset, apply preprocessing, feature extraction, and modeling to categorize the image.
 
+## Computer vision pipeline
+
+The following diagram shows the high-level methodology used to address the problem statement: RVL-CDIP images are ingested, preprocessed, passed through feature extraction, and classified by a multiclass model into one of sixteen document categories.
+
+```mermaid
+flowchart LR
+  A((Start event)) --> B["1. Input data"]
+  B --> C["2. Preprocessing"]
+  C --> D["3. Feature extraction"]
+  D --> E["4. ML Model"]
+  E --> F((End))
+```
+
 ## Dataset
 
 The **RVL-CDIP** (Ryerson Vision Lab Complex Document Information Processing) dataset consists of 400,000 grayscale images in 16 classes, with 25,000 images per class. There are 320,000 training images, 40,000 validation images, and 40,000 test images. The images are sized so their largest dimension does not exceed 1000 pixels.
