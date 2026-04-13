@@ -62,13 +62,9 @@ flowchart TD
 
 **Observed pool sizes (example machine):** under **`/Volumes/T7/rvl-cdip/train/<class>/`**, each class folder holds on the order of **~19.8k–20.1k** TIFFs (consistent with **~20k** train images per class in RVL-CDIP). `generate_dataset` logs one line per directory, e.g. `Directory .../train/15 has 19975 files, we have to choose 1000 files (randomly).` — then it writes **1,000** random **PNG**s per class. Under **`.../rvl-cdip/test/<class>/`**, pools are **~2.4k–2.6k** TIFFs per class (about **2,500** on average, matching **40k** test ÷ **16**), with log lines such as `Directory .../test/3 has 2532 files, we have to choose 200 files (randomly).` That pass writes **200** random **PNG**s per class (**3,200** total).
 
-**Models** (three runs per data configuration):
+**Models** (three per dataset size — see **Modeling**): **CNN** (conv + **ReLU** + **softmax**), **EfficientNetB0**, **ResNet50**. **Early stopping** on **validation accuracy**, **patience = 4** epochs.
 
-1. **Convolutional neural network (CNN)** — custom or from-scratch baseline.
-2. **Transfer learning** with **EfficientNetB0**.
-3. **Transfer learning** with **ResNet50**.
-
-Each model is trained and evaluated on the same **train / validation / test** layout for that subset. After every run, the notebook records **training accuracy**, **validation accuracy**, **training loss**, **validation loss**, **execution time**, **number of epochs**, and related settings. **Collect observations** aggregates these runs; the final **conclusion** compares models and recommends a preferred setup from the metrics.
+Each model is trained on the same **train / validation / test** layout for that subset. After every run, the notebook records **training accuracy**, **validation accuracy**, **training loss**, **validation loss**, **execution time**, **number of epochs**, and related settings. **Collect observations** aggregates these runs; the final **conclusion** compares models and recommends a preferred setup from the metrics.
 
 **Train / validation / test (per experimental dataset):**
 
@@ -381,13 +377,33 @@ Because the task is **document images**, layout cues such as **header**, **foote
 
 The output of this stage is a **tabular (columnar) dataset**: each **row** is one image, and each **column** corresponds to features produced by successive **convolutional** (and related) blocks—suitable for downstream classification or for inspection alongside labels.
 
-## ML model
+## Modeling
 
-Once convolutional blocks produce **1-D feature vectors**, several **classifiers** can sit on top for the final 16-way decision. The main line of work is a **neural network** head (multi-layer perceptron or similar) with experiments over **hidden-layer** depth and width, **activation** functions, and **number of training epochs**.
+Training compares **three** model families on the **same** sampled datasets, across **five** training scales. **Objective:** build a **metrics matrix** (dataset size × model) so the best **model** and **data scale** can be chosen from **validation** (and **test**) performance, **loss**, **runtime**, and **epochs**—aligned with **Collect observations** in the notebook flow.
 
-**Aspirational** extensions include classic learners such as a **support vector machine (SVM)** and **AdaBoost**, applied to the same fixed features, to compare shallow boosted or margin-based models against the neural head.
+**Architectures**
 
-Deliverables for this stage include **training-set** summaries of **accuracy**, **recall**, and **precision** (e.g., per-class and aggregated in tabular form), plus a **performance matrix** that records **wall-clock runtime** (and key **hyper-parameters**) for each configuration. Together, these tables support **model selection** against the project’s accuracy–cost trade-offs.
+1. **Convolutional neural network (CNN)** — a **basic** stack: a small number of **convolutional** layers, **ReLU** activations, and a **softmax** output over **16** classes (from-scratch baseline).
+2. **EfficientNetB0** — **transfer learning** (ImageNet-pretrained backbone, task-specific head).
+3. **ResNet50** — **transfer learning** (same pattern).
+
+**Procedure:** For each dataset size below, **train (or fine-tune)** all **three** models on that split’s **training** data, monitor **validation**, then record **test** metrics when applicable. For scales **2–5**, the **same architectural definitions** and training recipe as in step **1** are reused—weights are **fit again** on the larger sample (not merely evaluating the step-1 checkpoint on new pixels unless you explicitly choose warm-start).
+
+| Step | Name (total train imgs) | Images / category | Runs |
+|------|-------------------------|-------------------|------|
+| 1 | **1,600** | 100 | **A.** Train CNN · **B.** EfficientNetB0 · **C.** ResNet50 |
+| 2 | **8,000** | 500 | **A–C.** Same three models, retrained on this split |
+| 3 | **16,000** | 1,000 | **A–C.** Same three models, retrained on this split |
+| 4 | **32,000** | 2,000 | **A–C.** Same three models, retrained on this split |
+| 5 | **160,000** | 10,000 | **A–C.** Same three models, retrained on this split |
+
+**Early stopping:** every run uses **`EarlyStopping`** on **validation accuracy** with **`patience = 4`** epochs—training halts if **val accuracy** does not improve for **four** consecutive epochs.
+
+**Optional / aspirational:** shallow learners (**SVM**, **AdaBoost**) on **frozen** features were discussed earlier in the proposal; they are **out of scope** for this core **3 × 5** grid unless time allows.
+
+## ML model (scope note)
+
+The **custom CNN** and the **transfer** backbones above **jointly** perform **feature learning** and **classification**; there is no separate **MLP-only** head stage in the main grid. Per-run deliverables remain **accuracy** / **loss** / **time** / **epochs** tables for **model × dataset** comparison, as in **Structure of the notebook**.
 
 ## Infrastructure details
 
