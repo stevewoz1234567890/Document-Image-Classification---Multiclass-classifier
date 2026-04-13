@@ -402,6 +402,8 @@ This **CNN** is built to **classify document images** into the **16** RVL-CDIP c
 5. **Flatten** (size **8 × 126 × 94 = 94,752**).
 6. **Dense** head with **LeakyReLU** and **Dropout**, then **Dense(4096)** → **Dense(2046)** → **Dense(16)** + **Softmax** for **16** classes.
 
+**High-level summary:** As in the figure, the stack begins with a **convolution** that expands the input into **32 feature maps** (“**32 channels**” after the first conv; the underlying page is usually **one** grayscale channel, sometimes duplicated for compatibility with wider kernels). Nonlinearities use the **rectified linear** family—**ReLU** in principle; the diagram implements **LeakyReLU**, a common **ReLU** variant that avoids dead neurons. **Max-pooling** takes the **maximum** over each pooling window so the **spatial** size drops by about **half** at each pool stage, reducing parameters and building translation tolerance. **L2 weight regularization** (on conv / dense layers as configured in the notebook) together with **Dropout** limits **overfitting** on smaller sampled sets. The head ends with **softmax** over **16** classes for multi-class probabilities.
+
 **Procedure:** For each dataset size below, **train (or fine-tune)** all **three** models on that split’s **training** data, monitor **validation**, then record **test** metrics when applicable. For scales **2–5**, the **same architectural definitions** and training recipe as in step **1** are reused—weights are **fit again** on the larger sample (not merely evaluating the step-1 checkpoint on new pixels unless you explicitly choose warm-start).
 
 | Step | Name (total train imgs) | Images / category | Runs |
