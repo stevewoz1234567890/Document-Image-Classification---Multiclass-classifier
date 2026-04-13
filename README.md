@@ -307,13 +307,36 @@ def generate_dataset(width, height, target_path, source_path, desired_size_per_c
         category += 1
 ```
 
+**Example — training split for “Dataset 16,000” (1000 × 768 px, 1000 images per category):** `source_path` points at the **`train`** folder only, so class folders **`0` … `15`** are created directly under **`target_path`**. Adjust paths for **Colab** (Drive mount) or another disk as needed.
+
+```python
+# Generate train dataset for 1000×768 with 1000 images per category
+source_path = "/Volumes/T7/rvl-cdip/train"
+target_path = "/Volumes/T7/sample_1000/rvl-cdip/"
+desired_size_per_category = 1000
+width = 1000
+height = 768
+generate_dataset(width, height, target_path, source_path, desired_size_per_category)
+```
+
 CLI equivalent (same logic, portable paths): [`scripts/generate_resampled_dataset.py`](scripts/generate_resampled_dataset.py)
 
 ```bash
+# 512×512 example
 python scripts/generate_resampled_dataset.py \
   --width 512 --height 512 \
   --source /path/to/rvl-cdip-tif \
   --target /path/to/rvl-cdip-png \
+  --per-class 1000 \
+  --seed 42
+```
+
+```bash
+# Same as notebook snippet: 1000×768, train tree only, 1000 per class
+python scripts/generate_resampled_dataset.py \
+  --width 1000 --height 768 \
+  --source /Volumes/T7/rvl-cdip/train \
+  --target /Volumes/T7/sample_1000/rvl-cdip \
   --per-class 1000 \
   --seed 42
 ```
