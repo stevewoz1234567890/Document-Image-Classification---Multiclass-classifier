@@ -624,9 +624,10 @@ def plot_accuracy(history):
     plt.show()
 
 
-# plot_loss(simple_overfitting_model)
-# plot_accuracy(simple_overfitting_model)
+plot_accuracy(simple_overfitting_model)
 ```
+
+After **`plot_accuracy`**, call **`plot_loss(simple_overfitting_model)`** the same way if you want the loss curves.
 
 **Optional / aspirational:** shallow learners (**SVM**, **AdaBoost**) on **frozen** features were discussed earlier in the proposal; they are **out of scope** for this core **3 × 5** grid unless time allows.
 
