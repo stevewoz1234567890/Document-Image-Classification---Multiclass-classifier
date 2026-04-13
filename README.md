@@ -186,7 +186,12 @@ python scripts/organize_rvl_cdip_for_keras.py \
 
 ### Step 2 — Resize and unify geometry
 
-**RVL-CDIP** images are often around **1000 × 754** pixels, but dimensions vary across the corpus. After reorganization (or on the reduced subset from **Input data**), images targeted for modeling are **resized to 512 × 512** so that all samples share the same spatial size for later feature extraction and modeling.
+After **Step 1**, the corpus is still at **native** resolutions across hundreds of thousands of files. Before choosing a target size and resampling policy, the notebook **profiles** the data and answers:
+
+1. **Do the images have different dimensions?** For **RVL-CDIP**, **yes**: widths and heights vary by scan; only the **longest side** is capped at about **1000** pixels in the release, so many distinct **(width, height)** pairs appear rather than a single global shape.
+2. **If so, is there a distribution of images by dimension?** The exploration step **measures** each image (or a **stratified sample** if scanning the full **400k** is too slow), then summarizes **frequency** of each **(W, H)** (or of **W**, **H**, and **max(W, H)** separately). Typical outputs are **histograms**, a **bar chart of the most common shapes**, and **summary statistics** (mean/median dimensions, counts per bucket). That confirms how aggressive resizing will be (mostly **downsampling** vs occasional **upsampling**) and motivates **anti-aliasing** when shrinking.
+
+With that baseline understood, images used for modeling are **resized to 512 × 512** (see earlier **Preprocessing** discussion) so every batch tensor has fixed spatial extent.
 
 Because this is usually **downsampling** relative to the originals, resampling must limit **aliasing** (e.g., by using a high-quality filter or library options that apply **anti-aliasing** / low-pass behavior before decimation). Only images **listed in the prepared splits** are resized, keeping preprocessing aligned with the notebook’s output paths and mapping files.
 
