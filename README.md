@@ -56,7 +56,9 @@ flowchart TD
 - **Resize images** — standardize resolution for the model (see the **Preprocessing** section).
 - **Reformat** — convert **.tif** to **.png** for smaller Drive footprint and **Keras** pre-trained pipelines (see **Preprocessing**, Step 3).
 
-**Dataset size:** the diamond re-runs **modeling** for training subsets on the order of **1,600**, **8,000**, **16,000**, **32,000**, and **160,000** **training** images (see split note below).
+**Dataset size (iterative):** experiments sweep how many **training** images are sampled **per category**—**100**, **500**, **1,000**, **2,000**, and **10,000**. With **16** classes, that is **1,600**, **8,000**, **16,000**, **32,000**, and **160,000** **training** images in total, matching the branches in the diagram. The same **generate_dataset**-style pipeline builds each regime; to avoid repeating long sections, the **notebook** walks through **only three** of these sizes as **demonstrations** (the procedure is identical for the rest).
+
+**Example — “Dataset 16,000”:** **1,000** images **per category** for **training** and **200** images **per category** for **validation** (validation is **20%** of the per-class training count, on disjoint files). The run name follows total **training** images: 16 × 1,000 = **16,000**. In this configuration, exported images are **1000 × 768** pixels (other experiments in this repo may use different target sizes, e.g. **512 × 512**, as in **Preprocessing**).
 
 **Models** (three runs per data configuration):
 
