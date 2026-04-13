@@ -463,6 +463,16 @@ nn.add(layers.Dense(16, activation="softmax"))
 nn.summary()
 ```
 
+**Compile the model:** **RMSprop** optimizer, **categorical cross-entropy** (one-hot labels), **accuracy** for monitoring. In `doc_models`, use **`compile_document_cnn(nn)`** after **`build_document_cnn()`**.
+
+```python
+nn.compile(
+    optimizer="RMSprop",
+    loss="categorical_crossentropy",
+    metrics=["accuracy"],
+)
+```
+
 **Procedure:** For each dataset size below, **train (or fine-tune)** all **three** models on that split’s **training** data, monitor **validation**, then record **test** metrics when applicable. For scales **2–5**, the **same architectural definitions** and training recipe as in step **1** are reused—weights are **fit again** on the larger sample (not merely evaluating the step-1 checkpoint on new pixels unless you explicitly choose warm-start).
 
 | Step | Name (total train imgs) | Images / category | Runs |

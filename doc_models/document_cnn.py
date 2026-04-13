@@ -48,6 +48,19 @@ def build_document_cnn(
     )
 
 
+def compile_document_cnn(
+    model: models.Sequential,
+    optimizer: str = "RMSprop",
+) -> models.Sequential:
+    """RMSprop + categorical cross-entropy + accuracy (course notebook)."""
+    model.compile(
+        optimizer=optimizer,
+        loss="categorical_crossentropy",
+        metrics=["accuracy"],
+    )
+    return model
+
+
 if __name__ == "__main__":
-    m = build_document_cnn()
+    m = compile_document_cnn(build_document_cnn())
     m.summary()
